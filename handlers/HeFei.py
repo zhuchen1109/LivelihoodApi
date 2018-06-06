@@ -3,6 +3,7 @@
 import logging
 import json
 import math
+import time
 import constants
 
 from handlers.BaseHandler import BaseHandler
@@ -51,8 +52,10 @@ class HeFeiListHandler(BaseHandler):
                 return self.write(buildFailJson(RET.DBERR, "数据库查询出错"))
             else:
                 total_page = int(math.ceil(ret['count'] / float(constants.CARD_LIST_PAGE_CAPACITY)))
-                self.redis.set(constants.REDIS_KEY_HF_TOTAL_PAGE, total_page, ex=constants.REDIS_CARD_LIST_EXPIRES_SECONDS)
-                # self.redis.expire(constants.REDIS_KEY_HF_TOTAL_PAGE, constants.REDIS_CARD_LIST_EXPIRES_SECONDS)
+                try:
+                    self.redis.set(constants.REDIS_KEY_HF_TOTAL_PAGE, total_page, ex=constants.REDIS_CARD_LIST_EXPIRES_SECONDS)
+                except Exception as e:
+                    logging.error(e)
                 if page > total_page:
                     return buildSuccJson(data=[], total_page=total_page)
 
@@ -97,8 +100,9 @@ class HeFeiListHandler(BaseHandler):
                 # "replyDate": row.get("replyDate", None),
             }
             replyDate = row.get("replyDate", None)
-            if not replyDate:
-                d['replyDate'] = replyDate.strftime('%Y-%m-%d')
+            if replyDate:
+                # d['replyDate'] = replyDate.strftime('%Y-%m-%d')
+                d['replyDate'] = int(time.mktime(replyDate.timetuple()))
             data.append(d)
         # 对与返回的多页面数据进行分页处理
         # 首先取出用户想要获取的page页的数据
@@ -122,12 +126,65 @@ class HeFeiListHandler(BaseHandler):
 
         return self.write(datas[page])
 
+class GetDetailHandler(BaseHandler):
 
+    def get(self):
+        '''
+        需要参数cardId
+        :return:返回指定的详情页数据
+        '''
+        cardId = self.get_argument('cardId', None)
+        if not cardId:
+            return self.write(buildFailJson(errcode=RET.PARAMERR, errmsg='未找到参数cardId'))
 
+        try:
+            ret = self.redis.hget(constants.REDIS_KEY_HF_DETAILS, cardId)
+        except Exception as e:
+            logging.error(e)
+            ret = None
 
+        if ret:
+            logging.info('hit redis %s' % constants.REDIS_KEY_HF_DETAILS)
+            return self.write(ret)
 
+        sql = "select cardId,title,type,source,reply,hotCount,replyDate,createTime,content,replyContent from ll_card_detail where cardId=%(cardId)s;"
+        sql_params = {}
+        sql_params['cardId'] = cardId
+        try:
+            ret = self.db.get(sql, **sql_params)
+        except Exception as e:
+            logging.error(e)
+            return self.write(buildFailJson(RET.DATAERR, '数据库查询出错'))
 
+        if not ret:
+            return self.write(buildFailJson(RET.NODATA))
 
+        cardData = {
+            "cardId":ret['cardId'],
+            "title": ret['title'],
+            "type": ret['type'],
+            "source": ret['source'],
+            "reply": ret['reply'],
+            "hotCount": ret['hotCount'],
+            "content": ret['content'],
+            "replyContent": ret['replyContent'],
+        }
+        replyDate = ret['replyDate']
+        if replyDate:
+            cardData["replyDate"] = int(time.mktime(replyDate.timetuple()))
+        createTime = ret['createTime']
+        if createTime:
+            cardData["createTime"] = int(time.mktime(createTime.timetuple()))
+
+        retData = json.dumps(buildSuccJson(data=cardData))
+        try:
+            redis_key = constants.REDIS_KEY_HF_DETAILS
+            self.redis.hset(redis_key, cardId, retData)
+            self.redis.expire(redis_key, constants.REDIS_CARD_LIST_EXPIRES_SECONDS)
+        except Exception as e:
+            logging.error(e)
+
+        return self.write(retData)
 
 
 

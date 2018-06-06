@@ -6,5 +6,6 @@ import os
 
 handlers = [
      (r"/api/hefei/list", HeFei.HeFeiListHandler), # 城市合肥的列表数据
+     (r"/api/hefei/getdetail", HeFei.GetDetailHandler), # 城市合肥的详情数据
      # (r'/(.*)', BaseHandler.StaticFileBaseHandler, dict(path=os.path.join(os.path.dirname(__file__), 'template'), default_filename='index.html')),
 ]
