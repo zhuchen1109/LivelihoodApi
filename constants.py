@@ -13,4 +13,4 @@ CARD_LIST_PAGE_CACHE_NUM = 2 # 房源列表页每次缓存页面书
 REDIS_KEY_HF_LIST = 'hefei_list'
 REDIS_KEY_HF_TOTAL_PAGE = 'hefei_total_page'
 REDIS_KEY_HF_DETAILS = 'hefei_details'
-REDIS_CARD_LIST_EXPIRES_SECONDS = 600 # 列表页数据缓存时间 秒
+REDIS_CARD_LIST_EXPIRES_SECONDS = 7200 # 列表页数据缓存时间 秒
