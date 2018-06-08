@@ -75,7 +75,7 @@ class HeFeiListHandler(BaseHandler):
         # limit 10 返回前10条
         # limit 20,3 从20条开始，返回3条数据
         logging.debug('执行数据库查询列表数据，page:%s' % page)
-        sql = "select cardId,title,type,source,reply,replyDate from ll_card_detail order by replyDate desc"
+        sql = "select cardId,title,type,source,reply,replyDate from ll_card_detail order by replyDate desc,cardId asc"
         if 1 == page:
             sql += " limit %s" % (constants.CARD_LIST_PAGE_CAPACITY * constants.CARD_LIST_PAGE_CACHE_NUM)
         else:
@@ -115,7 +115,7 @@ class HeFeiListHandler(BaseHandler):
             page_data = data[i * constants.CARD_LIST_PAGE_CAPACITY: (i + 1) * constants.CARD_LIST_PAGE_CAPACITY]
             if not page_data:
                 break
-            datas[page + i] = json.dumps(buildSuccJson(current_page_data, total_page=total_page))
+            datas[page + i] = json.dumps(buildSuccJson(page_data, total_page=total_page))
             i += 1
         try:
             redis_key = constants.REDIS_KEY_HF_LIST
