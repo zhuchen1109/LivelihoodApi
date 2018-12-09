@@ -8,12 +8,13 @@ settings = {
     "static_path": os.path.join(os.path.dirname(__file__), 'static'),
     'template_path': os.path.join(os.path.dirname(__file__), 'template'),
     'cookie_secret': 'b+t4dMZLTiagmie2YqhhPisIwNqR9kpVtowiC4sw3lM=',
-    'xsrf_cookies': True,
+    'xsrf_cookies': False,
     'debug':True,
 }
 
 # mysql
 mysql_option = dict(
+    #host='140.143.36.84',
     host='127.0.0.1',
     database='livelihood',
     user='root',
